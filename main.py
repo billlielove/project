@@ -17,6 +17,18 @@ title_font = pygame.font.Font("Fonts/pixelatedfont.ttf", 45)  # Getting the styl
 title_name_surf = title_font.render("Evolution Simulator", False, (0, 0, 0))  # Creating the surface for the title name
 title_name_rect = title_name_surf.get_rect(center=(screen_width / 2, 200))  # Converting the surface into a rectangle
 title_background_surf = pygame.image.load("Backgrounds/titlebackground.png").convert()  # Getting the background image and turning it into a surface
+title_screen = True
+
+
+class Organism(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        crab = pygame.image.load("Crab/crab1.png").convert_alpha()
+        self.image = crab
+        self.rect = crab.get_rect(midbottom=(400, 400))
+
+crab = pygame.sprite.GroupSingle()
+crab.add(Organism())
 
 # Game loop
 while True:
@@ -25,9 +37,13 @@ while True:
             pygame.quit()  # quits python
             exit()  # exits the window
 
-    # Displaying surfaces and rectangles on the screen
-    screen.blit(title_background_surf, (0, 0))  # displays the title background image onto the screen
-    screen.blit(title_name_surf, title_name_rect)  # displays the title name on top of the background image on the screen
+    # Title screen
+    if title_screen:  # Displaying surfaces and rectangles on the screen
+        screen.blit(title_background_surf, (0, 0))  # displays the title background image onto the screen
+        screen.blit(title_name_surf, title_name_rect)  # displays the title name on top of the background image on the screen
+
+    else:
+        crab.draw(screen)
 
     pygame.display.update()  # updates the display
     clock.tick(60)  # Limits the runtime of the game to 60 ticks/frames per second
