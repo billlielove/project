@@ -27,6 +27,7 @@ main_background_surf = pygame.image.load("Backgrounds/mainbackground.png").conve
 
 # Settings screen surface
 settings_background_surf = pygame.image.load("Backgrounds/settingsbackground.png").convert()
+settings_screen = False
 
 class Button:
     def __init__(self, text, width, height, pos):
@@ -78,15 +79,22 @@ while True:
             exit()  # exits the window
 
     # Title screen
-    if title_screen:  # Displaying surfaces and rectangles on the screen
+    if title_screen == True and settings_screen == False:  # Displaying surfaces and rectangles on the screen
         screen.blit(title_background_surf, (0, 0))  # displays the title background image onto the screen
         screen.blit(title_name_surf, title_name_rect)  # displays the title name on top of the background image on the screen
         start_button.draw()
-        if start_button.check_click() == True:
-            title_screen = False
         options_button.draw()
+        if start_button.check_click():
+            title_screen = False
+        if options_button.check_click():
+            title_screen, settings_screen = False, True
+
+    elif settings_screen:
+        screen.blit(settings_background_surf, (0, 0))
+
     else:
         screen.blit(main_background_surf, (0, 0))
+        crab.draw(screen)
 
     pygame.display.update()  # updates the display
     clock.tick(60)  # Limits the runtime of the game to 60 ticks/frames per second
