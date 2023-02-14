@@ -47,9 +47,9 @@ class Button:
 
     def check_click(self):
         mouse_pos = pygame.mouse.get_pos()
-        if self.body_rect.collidepoint(mouse_pos):
+        if self.body_rect.collidepoint(mouse_pos) == True:
             mouse_pos = pygame.mouse.get_pos()
-            if pygame.mouse.get_pressed()[0]:
+            if pygame.mouse.get_pressed()[0] == True:
                 self.clicked = True
                 return True
             else:
@@ -78,10 +78,10 @@ class Organism(pygame.sprite.Sprite):
         self.player_input()
 
 # Buttons
-start_button_title = Button("Start", 150, 50, (200, 400))
-options_button_title = Button("Settings", 150, 50, (450, 400))
+start_button_title = Button("Start", 150, 50, (325, 400))
 back_button = Button("Back", 150, 50, (30, 30))
-options_button_main = Button("Settings", 150, 50, (620, 30))
+options_button_main = Button("Options", 150, 50, (620, 30))
+menu_button = Button("Menu", 150, 50, (620, 720))
 
 # Crab
 crab = pygame.sprite.GroupSingle()
@@ -99,22 +99,22 @@ while True:
         screen.blit(title_background_surf, (0, 0))  # displays the title background image onto the screen
         screen.blit(title_name_surf, title_name_rect)  # displays the title name on top of the background image on the screen
         start_button_title.draw()
-        options_button_title.draw()
         if start_button_title.check_click():
             title_screen, main_screen = False, True
-        if options_button_title.check_click():
-            title_screen, settings_screen = False, True
 
-    elif settings_screen:
+    elif settings_screen == True:
         screen.blit(settings_background_surf, (0, 0))
         back_button.draw()
+        menu_button.draw()
         if back_button.check_click() == True:
+            main_screen, settings_screen = True, False
+        if menu_button.check_click() == True:
             title_screen, settings_screen = True, False
 
-    elif main_screen:
+    elif main_screen == True:
         screen.blit(main_background_surf, (0, 0))
         options_button_main.draw()
-        if options_button_main.check_click():
+        if options_button_main.check_click() == True:
             settings_screen, main_screen = True, False
         crab.draw(screen)
         crab.update()
