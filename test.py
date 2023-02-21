@@ -1,13 +1,12 @@
-import pygame
-from sys import exit
+class Test:
+    def __init__(self):
+        self.energy = 500
 
-pygame.init()
+    def remove_energy(self):
+        self.energy -= 1
 
-screen = pygame.display.set_mode((500, 500))
-clock = pygame.time.Clock()
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+test = Test()
+print(test.energy)
+test.remove_energy()
+print(test.energy)

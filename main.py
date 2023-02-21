@@ -1,6 +1,6 @@
 import pygame
 from sys import exit
-import random
+from random import randint
 import math
 
 # initialising pygame
@@ -17,6 +17,7 @@ title_name_surf = title_font.render("Evolution Simulator", False, (0, 0, 0))
 title_name_rect = title_name_surf.get_rect(center=(screen_width / 2, 200))
 title_background_surf = pygame.image.load("Backgrounds/titlebackground.png").convert()
 title_screen = True
+text_font = pygame.font.Font("Fonts/Pixeltype.ttf", 30)
 main_background_surf = pygame.image.load("Backgrounds/mainbackground.png").convert()
 main_screen = False
 settings_background_surf = pygame.image.load("Backgrounds/settingsbackground.png").convert()
@@ -55,15 +56,15 @@ class Button:
 
 start_button_title = Button("Start", 150, 50, (325, 400))
 back_button = Button("Back", 150, 50, (30, 30))
-options_button_main = Button("Options", 150, 50, (620, 30))
-menu_button = Button("Menu", 150, 50, (620, 720))
+options_button_main = Button("Options", 150, 50, (600, 700))
+menu_button = Button("Menu", 150, 50, (620, 30))
 
 
 # Organism
 class Organism(pygame.sprite.Sprite):
     def __init__(self, speed):
         super().__init__()
-        crab1 = pygame.image.load("Crab/crab1.png").convert_alpha()
+        crab1 = pygame.image.load("images/crab1.png").convert_alpha()
         self.image = crab1
         self.original_image = self.image.copy()
         self.rect = crab1.get_rect(center=(400, 625))
@@ -73,7 +74,9 @@ class Organism(pygame.sprite.Sprite):
         self.pos = pygame.Vector2(self.rect.center)
 
         self.speed = speed * -1
+        self.energy = 100
 
+    # Player inputs
     def player_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
@@ -81,33 +84,64 @@ class Organism(pygame.sprite.Sprite):
         if keys[pygame.K_d]:
             self.angle -= 3
 
+    # Rotating the organism
     def rotate(self):
         self.direction = pygame.Vector2(1, 0).rotate(-self.angle)
         self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
+    # Moving the organism
     def move(self):
         direction = pygame.Vector2(0, self.speed).rotate(-self.angle)
         self.pos += direction
         self.rect.center = round(self.pos[0]), round(self.pos[1])
+        self.energy -= 0.4
 
+    def check_death(self):
+        if self.energy < 0:
+            self.energy = 0
+            return True
+
+    # Updating the organism
     def update(self):
-        self.player_input()
-        self.rotate()
-        self.move()
+        if self.energy > 0:
+            self.player_input()
+            self.rotate()
+            self.move()
+            self.check_death()
 
+    # Stopping organism from going out of screen
         if self.pos.x < 0:
             self.pos.x = 0
         elif self.pos.x > 800:
             self.pos.x = 800
         elif self.pos.y < 0:
             self.pos.y = 0
-        elif self.pos.y > 800:
-            self.pos.y = 800
+        elif self.pos.y > 630:
+            self.pos.y = 630
 
 
 crab = pygame.sprite.GroupSingle()
 crab.add(Organism(3))
+
+
+class Food(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        seaweed1 = pygame.image.load("images/seaweed1.png").convert_alpha()
+        self.image = seaweed1
+        self.rect = seaweed1.get_rect(center=(randint(0, 800), randint(0, 630)))
+
+
+food = pygame.sprite.Group()
+for x in range(50):
+    food.add(Food())
+
+
+def collision_sprite():
+    if pygame.sprite.spritecollide(crab.sprite, food, True):
+        return True
+
 
 # Game loop
 while True:
@@ -134,11 +168,22 @@ while True:
 
     elif main_screen:
         screen.blit(main_background_surf, (0, 0))
+        food.draw(screen)
         options_button_main.draw()
         if options_button_main.check_click():
             settings_screen, main_screen = True, False
         crab.draw(screen)
         crab.update()
+        if collision_sprite():
+            crab.sprite.energy += 10
+        if crab.sprite.check_death():
+            title_screen, main_screen = True, False
+        amount_of_energy = crab.sprite.energy
+        energy_info_surf = text_font.render("Energy: " + str(int(amount_of_energy)), False, (0, 0, 0))
+        energy_info_rect = energy_info_surf.get_rect(center=(100, 50))
+        screen.blit(energy_info_surf, energy_info_rect)
+
+
 
     pygame.display.update()
     clock.tick(60)
