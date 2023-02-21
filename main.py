@@ -145,5 +145,6 @@ while True:
         crab.draw(screen)
         crab.update()
 
+
     pygame.display.update()  # updates the display
     clock.tick(60)  # Limits the runtime of the game to 60 ticks/frames per second
