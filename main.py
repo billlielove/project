@@ -1,5 +1,8 @@
 import pygame
 from sys import exit
+import random
+import math
+
 
 pygame.init()  # initialises pygame
 
@@ -57,26 +60,49 @@ class Button:
                     self.clicked = False
 
 class Organism(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, screen, speed):
         super().__init__()
         crab1 = pygame.image.load("Crab/crab1.png").convert_alpha()
         self.image = crab1
+        self.original_image = self.image.copy()
         self.rect = crab1.get_rect(center=(400, 625))
+
+        self.angle = 0
+        self.direction = pygame.Vector2(1, 0)
+        self.pos = pygame.Vector2(self.rect.center)
+
+        self.speed = speed * -1
 
     def player_input(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            self.rect.y -= 2
-        if keys[pygame.K_s]:
-            self.rect.y += 2
         if keys[pygame.K_a]:
-            self.rect.x -= 2
+            self.angle += 3
         if keys[pygame.K_d]:
-            self.rect.x += 2
+            self.angle -= 3
+
+    def rotate(self):
+        self.direction = pygame.Vector2(1, 0).rotate(-self.angle)
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def move(self):
+        direction = pygame.Vector2(0, self.speed).rotate(-self.angle)
+        self.pos += direction
+        self.rect.center = round(self.pos[0]), round(self.pos[1])
 
     def update(self):
         self.player_input()
+        self.rotate()
+        self.move()
 
+        if self.pos.x < 0:
+            self.pos.x = 0
+        elif self.pos.x > 800:
+            self.pos.x = 800
+        elif self.pos.y < 0:
+            self.pos.y = 0
+        elif self.pos.y > 800:
+            self.pos.y = 800
 # Buttons
 start_button_title = Button("Start", 150, 50, (325, 400))
 back_button = Button("Back", 150, 50, (30, 30))
@@ -85,7 +111,7 @@ menu_button = Button("Menu", 150, 50, (620, 720))
 
 # Crab
 crab = pygame.sprite.GroupSingle()
-crab.add(Organism())
+crab.add(Organism(screen, 3))
 
 # Game loop
 while True:
