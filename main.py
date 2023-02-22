@@ -1,17 +1,15 @@
-import neat.config
 import pygame
 from sys import exit
 from random import randint
-import os
 import math
 
 
-def calculate_angle(crab_pos, food_pos):
-    x1 = crab_pos[0]
-    x2 = food_pos[0]
-    y1 = crab_pos[1]
-    y2 = food_pos[1]
-    return math.atan(math.pi - abs(x1-x2)/abs(y1-y2))
+# def calculate_angle(crab_pos, food_pos):
+#     x1 = crab_pos[0]
+#     x2 = food_pos[0]
+#     y1 = crab_pos[1]
+#     y2 = food_pos[1]
+#     return math.atan(math.pi - abs(x1-x2)/abs(y1-y2))
 
 
 def calculate_distance(crab_pos, food_pos):
@@ -60,6 +58,8 @@ class Button:
 
 
 start_button_title = Button("Start", 150, 50, (325, 400))
+play_again_button = Button("Play again?", 150, 50, (325, 400))
+exit_button = Button("Exit", 150, 50, (325, 470))
 
 
 # Organism
@@ -110,7 +110,7 @@ class Organism(pygame.sprite.Sprite):
     def move_forward(self):
         direction = pygame.Vector2(0, self.speed).rotate(self.angle)
         self.pos += direction
-        self.energy -= abs(self.speed)
+        self.energy -= abs(self.speed) * 5
 
     # Rotating the organism
     def rotate(self):
@@ -128,15 +128,12 @@ class Organism(pygame.sprite.Sprite):
 
     # Updating the organism
     def update(self):
-        if self.energy > 0:
-            self.player_input()
-            self.rotate()
-            self.metabolism()
-            self.time_alive += 1 / 60
-            self.draw()
-            self.update_xy()
-        else:
-            self.energy = 0
+        self.player_input()
+        self.rotate()
+        self.metabolism()
+        self.time_alive += 1 / 60
+        self.draw()
+        self.update_xy()
 
         # Stopping organism from going out of screen
         if self.pos.x < 0:
@@ -150,9 +147,6 @@ class Organism(pygame.sprite.Sprite):
 
         if self.energy > 10000:
             self.energy = 10000
-
-
-crab = (Organism(10))
 
 
 class Food(pygame.sprite.Sprite):
@@ -173,7 +167,7 @@ class Food(pygame.sprite.Sprite):
 def main():
     # different screens and menus
     title_font = pygame.font.Font("Fonts/pixelatedfont.ttf", 45)
-    title_name_surf = title_font.render("Evolution Simulator", False, (0, 0, 0))
+    title_name_surf = title_font.render("Project", False, (0, 0, 0))
     title_name_rect = title_name_surf.get_rect(center=(screen_width / 2, 200))
     title_background_surf = pygame.image.load("Backgrounds/titlebackground.png").convert()
     title_screen = True
@@ -234,6 +228,11 @@ def main():
                     smallest_distance_coords = list_of_food_coords[distances_from_crab.index(smallest_distance)]
 
                 crab.update()
+                if crab.energy < 0 or crab.energy == 0:
+                    main_screen = False
+                    win_screen = True
+                    break
+
             for crab in crabs:
                 amount_of_energy = crab.energy
                 energy_info_surf = text_font.render("Energy: " + str(int(amount_of_energy)), False, (0, 0, 0))
@@ -264,9 +263,18 @@ def main():
         elif win_screen:
             screen.fill((255, 255, 255))
             screen.blit(win_surf, win_rect)
+            play_again_button.draw()
+            if play_again_button.check_click():
+                break
+            exit_button.draw()
+            if exit_button.check_click():
+                pygame.quit()
+                exit()
+
 
         pygame.display.update()
         clock.tick(60)
 
-
-main()
+play_again = True
+while play_again:
+    main()
