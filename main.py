@@ -4,12 +4,35 @@ from random import randint
 import math
 
 
-# def calculate_angle(crab_pos, food_pos):
-#     x1 = crab_pos[0]
-#     x2 = food_pos[0]
-#     y1 = crab_pos[1]
-#     y2 = food_pos[1]
-#     return math.atan(math.pi - abs(x1-x2)/abs(y1-y2))
+def calculate_angle_between_crab_and_food(crab_degrees, crab_pos, food_pos):
+    x1 = crab_pos[0]
+    x2 = food_pos[0]
+    y1 = crab_pos[1]
+    y2 = food_pos[1]
+    angle = crab_degrees - abs(math.degrees(math.atan((y2 - y1) / (x2 - x1))))
+    if y2 < y1 and x2 > x1:
+        if angle > 0:
+            return angle
+        if angle < 0:
+            return 360 + angle
+
+    if y2 < y1 and x2 < x1:
+        angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) - 90
+        if angle > 0:
+            return angle
+        if angle < 0:
+            return 360 + angle
+
+    if y2 > y1 and x2 < x1:
+        if angle > 0:
+            return 360 - (angle + 180) % 360
+        if angle < 0:
+            return 180 + angle
+
+    if y2 > y1 and x2 > x1:
+        angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) + 90
+        return angle % 360
+
 
 
 def calculate_distance(crab_pos, food_pos):
@@ -75,8 +98,8 @@ class Organism(pygame.sprite.Sprite):
         self.direction = pygame.Vector2(1, 0)
         self.pos = pygame.Vector2(self.rect.center)
 
-        self.speed = speed * -1
-        self.energy = 10000
+        self.speed = speed * -2
+        self.energy = 10000000
         self.time_alive = 0
 
         self.xy = (self.pos.x, self.pos.y)
@@ -100,26 +123,26 @@ class Organism(pygame.sprite.Sprite):
         self.rect.center = round(self.pos[0]), round(self.pos[1])
 
     def turn_left(self):
-        self.angle -= 5
+        self.angle += 10
         self.angle %= 360
 
     def turn_right(self):
-        self.angle += 5
+        self.angle -= 10
         self.angle %= 360
 
-    def move_forward(self):
-        direction = pygame.Vector2(0, self.speed).rotate(self.angle)
-        self.pos += direction
-        self.energy -= abs(self.speed) * 5
-
-    # Rotating the organism
+    # Rotating
     def rotate(self):
-        self.direction = pygame.Vector2(1, 0).rotate(self.angle)
-        self.image = pygame.transform.rotate(self.original_image, -self.angle)
+        self.direction = pygame.Vector2(1, 0).rotate(-self.angle)
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
 
+    def move_forward(self):
+        direction = pygame.Vector2(0, self.speed).rotate(-self.angle)
+        self.pos += direction
+        self.energy -= abs(self.speed) * 3
+
     def metabolism(self):
-        self.energy -= 2
+        self.energy -= 10
 
     def collided(self, food):
         if pygame.Rect.colliderect(self.rect, food):
@@ -131,7 +154,7 @@ class Organism(pygame.sprite.Sprite):
         self.player_input()
         self.rotate()
         self.metabolism()
-        self.time_alive += 1 / 60
+        self.time_alive += 1 / 30
         self.draw()
         self.update_xy()
 
@@ -145,8 +168,11 @@ class Organism(pygame.sprite.Sprite):
         elif self.pos.y > 630:
             self.pos.y = 630
 
-        if self.energy > 10000:
-            self.energy = 10000
+        # if self.energy > 10000:
+        #     self.energy = 10000
+
+        # if self.angle > 180:
+        #     self.angle = -(360-self.angle)
 
 
 class Food(pygame.sprite.Sprite):
@@ -181,9 +207,9 @@ def main():
 
     foods = []
     food_coordinates = []
-    for x in range(20):
-        food_x_spawn = randint(0, 800)
-        food_y_spawn = randint(0, 630)
+    for x in range(50):
+        food_x_spawn = randint(10, 790)
+        food_y_spawn = randint(10, 630)
         foods.append(Food(food_x_spawn, food_y_spawn))
         food_coordinates.append((food_x_spawn, food_y_spawn))
 
@@ -243,11 +269,12 @@ def main():
                 time_alive_rect = time_alive_surf.get_rect(midleft=(20, 70))
                 screen.blit(time_alive_surf, time_alive_rect)
 
-                angle_surf = text_font.render("Angle: " + str(int(crab.angle)), False, (0, 0, 0))
+                direction_facing = (crab.angle + 90) % 360
+                angle_surf = text_font.render("Angle: " + str(crab.angle), False, (0, 0, 0))
                 angle_rect = angle_surf.get_rect(midleft=(20, 90))
                 screen.blit(angle_surf, angle_rect)
 
-                crabcoords_surf = text_font.render("x coords: (" + str(int(crab.pos.x)) + ", " + str(int(crab.pos.y)) + ")", False, (0, 0, 0))
+                crabcoords_surf = text_font.render("crab coords: (" + str(int(crab.pos.x)) + ", " + str(int(crab.pos.y)) + ")", False, (0, 0, 0))
                 crabcoords_rect = crabcoords_surf.get_rect(midleft=(20, 110))
                 screen.blit(crabcoords_surf, crabcoords_rect)
 
@@ -259,6 +286,10 @@ def main():
                 shortest_distance_coords_rect = shortest_distance_coords_surf.get_rect(midleft=(20, 150))
                 screen.blit(shortest_distance_coords_surf, shortest_distance_coords_rect)
                 pygame.draw.line(screen, (0, 0, 0), (crab.pos.x, crab.pos.y), smallest_distance_coords, 2)
+
+                angle_to_turn_surf = text_font.render("angle to turn: " + str(calculate_angle_between_crab_and_food(direction_facing, (crab.pos.x, crab.pos.y), (smallest_distance_coords))), False, (0, 0, 0))
+                angle_to_turn_rect = crabcoords_surf.get_rect(midleft=(20, 170))
+                screen.blit(angle_to_turn_surf, angle_to_turn_rect)
 
         elif win_screen:
             screen.fill((255, 255, 255))
@@ -273,7 +304,7 @@ def main():
 
 
         pygame.display.update()
-        clock.tick(60)
+        clock.tick(30)
 
 play_again = True
 while play_again:
