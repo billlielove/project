@@ -258,11 +258,11 @@ def main(genomes, config):
                 ge[x].fitness += 0.1
 
                 output = nets[x].activate((crab.position.x, crab.angle_to_turn, crab.smallest_distance))
-                if output[0] < 1/3:
+                if output[0] < 1/5:
                     crab.move_forward()
-                elif output[0] < 2/3:
+                elif 1/5 <output[0] < 3/5:
                     crab.turn_left()
-                elif output[0] < 1:
+                elif output[0] > 3/5:
                     crab.turn_right()
 
             while len(foods) != 50:
@@ -287,7 +287,7 @@ def main(genomes, config):
                         food_coordinates.remove(food.xy)
                         list_of_food_coords.remove(food.xy)
                         distances_from_crab.remove(min(distances_from_crab))
-                        crab.energy += 300
+                        crab.energy += 500
                     smallest_distance = min(distances_from_crab)
                     crab.smallest_distance = int(min(distances_from_crab)[0])
                     smallest_distance_coords = list_of_food_coords[distances_from_crab.index(smallest_distance)]
@@ -299,16 +299,17 @@ def main(genomes, config):
                     nets.pop(x)
                     ge.pop(x)
 
-                # amount_of_energy = crab.energy
+                amount_of_energy = crab.energy
                 # energy_info_surf = text_font.render("Energy: " + str(int(amount_of_energy)), False, (0, 0, 0))
                 # energy_info_rect = energy_info_surf.get_rect(midleft=(20, 50))
                 # screen.blit(energy_info_surf, energy_info_rect)
-                time_alive = crab.time_alive
-                time_alive_surf = text_font.render("Time Alive: " + str(int(time_alive)), False, (0, 0, 0))
-                time_alive_rect = time_alive_surf.get_rect(midleft=(20, 70))
-                screen.blit(time_alive_surf, time_alive_rect)
 
-                # direction_facing = (crab.angle + 90) % 360
+                time_alive = crab.time_alive
+                # time_alive_surf = text_font.render("Time Alive: " + str(int(time_alive)), False, (0, 0, 0))
+                # time_alive_rect = time_alive_surf.get_rect(midleft=(20, 70))
+                # screen.blit(time_alive_surf, time_alive_rect)
+
+                direction_facing = (crab.angle + 90) % 360
                 # angle_surf = text_font.render("Angle: " + str(crab.angle), False, (0, 0, 0))
                 # angle_rect = angle_surf.get_rect(midleft=(20, 90))
                 # screen.blit(angle_surf, angle_rect)
@@ -317,16 +318,16 @@ def main(genomes, config):
                 # crabcoords_rect = crabcoords_surf.get_rect(midleft=(20, 110))
                 # screen.blit(crabcoords_surf, crabcoords_rect)
 
-                # shortest_distance_surf = text_font.render("shortest distance: " + str(crab.smallest_distance), False, (0, 0, 0))
+                shortest_distance_surf = text_font.render("shortest distance: " + str(crab.smallest_distance), False, (0, 0, 0))
                 # shortest_distance_rect = shortest_distance_surf.get_rect(midleft=(20, 130))
                 # screen.blit(shortest_distance_surf, shortest_distance_rect)
 
-                # shortest_distance_coords_surf = text_font.render("coords of closest food " + str(smallest_distance_coords), False, (0, 0, 0))
+                shortest_distance_coords_surf = text_font.render("coords of closest food " + str(smallest_distance_coords), False, (0, 0, 0))
                 # shortest_distance_coords_rect = shortest_distance_coords_surf.get_rect(midleft=(20, 150))
                 # screen.blit(shortest_distance_coords_surf, shortest_distance_coords_rect)
                 pygame.draw.line(screen, (0, 0, 0), (crab.position.x, crab.position.y), smallest_distance_coords, 2)
 
-                # crab.angle_to_turn = int(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords)))
+                crab.angle_to_turn = int(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords)))
                 # angle_to_turn_surf = text_font.render("angle to turn: " + str(crab.angle_to_turn), False, (0, 0, 0))
                 # angle_to_turn_rect = crabcoords_surf.get_rect(midleft=(20, 170))
                 # screen.blit(angle_to_turn_surf, angle_to_turn_rect)
