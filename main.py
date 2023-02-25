@@ -2,6 +2,8 @@ import pygame
 from sys import exit
 from random import randint
 import math
+import os
+import neat
 
 
 def calculate_angle_between_crab_and_food(crab_degrees, crab_pos, food_pos):
@@ -9,28 +11,36 @@ def calculate_angle_between_crab_and_food(crab_degrees, crab_pos, food_pos):
     x2 = food_pos[0]
     y1 = crab_pos[1]
     y2 = food_pos[1]
-    angle = crab_degrees - abs(math.degrees(math.atan((y2 - y1) / (x2 - x1))))
-    if y2 < y1 and x2 > x1:
+    # angle = crab_degrees - math.degrees(math.atan((y2 - y1) / (x2 - x1)))
+    if y2 <= y1 and x2 >= x1:
+        angle = crab_degrees - abs(math.degrees(math.atan((y2 - y1) / (x2 - x1))))
         if angle > 0:
             return angle
         if angle < 0:
             return 360 + angle
 
-    if y2 < y1 and x2 < x1:
-        angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) - 90
+    if y2 <= y1 and x2 <= x1:
+        if y2 == y1:
+            angle = crab_degrees - math.degrees(math.atan((x2 - x1)))
+        else:
+            angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) - 90
         if angle > 0:
             return angle
-        if angle < 0:
+        elif angle < 0:
             return 360 + angle
 
-    if y2 > y1 and x2 < x1:
-        if angle > 0:
-            return 360 - (angle + 180) % 360
-        if angle < 0:
-            return 180 + angle
+    if y2 >= y1 and x2 <= x1:
+        if y2 == y1:
+            angle = crab_degrees - math.degrees(math.atan((x2 - x1)))
+        else:
+            angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1)))
+        return (angle + 90) % 360
 
-    if y2 > y1 and x2 > x1:
-        angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) + 90
+    if y2 >= y1 and x2 >= x1:
+        if y2 == y1:
+            angle = crab_degrees - math.degrees(math.atan(x2 - x1))
+        else:
+            angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) + 90
         return angle % 360
 
 
@@ -205,7 +215,7 @@ def main():
 
     foods = []
     food_coordinates = []
-    for x in range(50):
+    while len(foods) != 50:
         food_x_spawn = randint(10, 790)
         food_y_spawn = randint(10, 630)
         foods.append(Food(food_x_spawn, food_y_spawn))
@@ -228,6 +238,14 @@ def main():
                 title_screen, main_screen = False, True
 
         elif main_screen and len(foods) > 0:
+
+
+            while len(foods) != 50:
+                food_x_spawn = randint(10, 790)
+                food_y_spawn = randint(10, 630)
+                foods.append(Food(food_x_spawn, food_y_spawn))
+                food_coordinates.append((food_x_spawn, food_y_spawn))
+
             screen.blit(main_background_surf, (0, 0))
             for crab in crabs:
                 distances_from_crab = []
@@ -243,10 +261,6 @@ def main():
                         list_of_food_coords.remove(food.xy)
                         distances_from_crab.remove(min(distances_from_crab))
                         crab.energy += 200
-                    if len(distances_from_crab) == 0:
-                        main_screen = False
-                        win_screen = True
-                        break
                     smallest_distance = min(distances_from_crab)
                     crab.smallest_distance = int(min(distances_from_crab)[0])
                     smallest_distance_coords = list_of_food_coords[distances_from_crab.index(smallest_distance)]
@@ -254,7 +268,7 @@ def main():
                 crab.update()
                 if crab.energy < 0 or crab.energy == 0:
                     main_screen = False
-                    win_screen = True
+                    # win_screen = True
                     break
 
             for crab in crabs:
@@ -276,7 +290,8 @@ def main():
                 crabcoords_rect = crabcoords_surf.get_rect(midleft=(20, 110))
                 screen.blit(crabcoords_surf, crabcoords_rect)
 
-                shortest_distance_surf = text_font.render("shortest distance: " + str(crab.smallest_distance), False, (0, 0, 0))
+                shortest_distance = crab.smallest_distance
+                shortest_distance_surf = text_font.render("shortest distance: " + str(shortest_distance), False, (0, 0, 0))
                 shortest_distance_rect = crabcoords_surf.get_rect(midleft=(20, 130))
                 screen.blit(shortest_distance_surf, shortest_distance_rect)
 
@@ -285,25 +300,44 @@ def main():
                 screen.blit(shortest_distance_coords_surf, shortest_distance_coords_rect)
                 pygame.draw.line(screen, (0, 0, 0), (crab.position.x, crab.position.y), smallest_distance_coords, 2)
 
-                angle_to_turn_surf = text_font.render("angle to turn: " + str(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords))), False, (0, 0, 0))
+                angle_to_turn = int(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords)))
+                angle_to_turn_surf = text_font.render("angle to turn: " + str(angle_to_turn), False, (0, 0, 0))
                 angle_to_turn_rect = crabcoords_surf.get_rect(midleft=(20, 170))
                 screen.blit(angle_to_turn_surf, angle_to_turn_rect)
 
-        elif win_screen:
-            screen.fill((255, 255, 255))
-            screen.blit(win_surf, win_rect)
-            play_again_button.draw()
-            if play_again_button.been_clicked():
-                break
-            exit_button.draw()
-            if exit_button.been_clicked():
-                pygame.quit()
-                exit()
+        # elif win_screen:
+        #     screen.fill((255, 255, 255))
+        #     screen.blit(win_surf, win_rect)
+        #     play_again_button.draw()
+        #     if play_again_button.been_clicked():
+        #         break
+        #     exit_button.draw()
+        #     if exit_button.been_clicked():
+        #         pygame.quit()
+        #         exit()
 
 
         pygame.display.update()
         clock.tick(60)
 
-play_again = True
-while play_again:
-    main()
+# play_again = True
+# while play_again:
+#     main()
+
+main()
+
+# def run(config_path):
+#     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, config_path)
+#
+#     p = neat.population(config)
+#
+#     p.add_reporter(neat.StdOutReporter(True))
+#     stats = neat.StatisticsReporter
+#     p.add_reporter(stats)
+#
+#     winner = p.run(main, 50)
+#
+# if __name__ == "__main__":
+#     local_dir = os.path.dirname(__file__)
+#     config_path = os.path.join(local_dir, "config-feedforward.txt")
+#     run(config_path)
