@@ -67,9 +67,9 @@ class Button:
     def draw(self):
         pygame.draw.rect(screen, self.body_colour, self.body_rect, border_radius=12)
         screen.blit(self.text_surf, self.text_rect)
-        self.check_click()
+        self.been_clicked()
 
-    def check_click(self):
+    def been_clicked(self):
         mouse_pos = pygame.mouse.get_pos()
         if self.body_rect.collidepoint(mouse_pos):
             if pygame.mouse.get_pressed()[0]:
@@ -96,17 +96,17 @@ class Organism(pygame.sprite.Sprite):
 
         self.angle = 0
         self.direction = pygame.Vector2(1, 0)
-        self.pos = pygame.Vector2(self.rect.center)
+        self.position = pygame.Vector2(self.rect.center)
 
         self.speed = speed * -2
-        self.energy = 10000000
+        self.energy = 1000000
         self.time_alive = 0
 
-        self.xy = (self.pos.x, self.pos.y)
+        self.xy = (self.position.x, self.position.y)
         self.smallest_distance = None
 
     def update_xy(self):
-        self.xy = (self.pos.x, self.pos.y)
+        self.xy = (self.position.x, self.position.y)
 
     def draw(self):
         screen.blit(self.image, self.rect)
@@ -120,14 +120,14 @@ class Organism(pygame.sprite.Sprite):
             self.turn_left()
         if keys[pygame.K_d]:
             self.turn_right()
-        self.rect.center = round(self.pos[0]), round(self.pos[1])
+        self.rect.center = round(self.position[0]), round(self.position[1])
 
     def turn_left(self):
-        self.angle += 10
+        self.angle += 5
         self.angle %= 360
 
     def turn_right(self):
-        self.angle -= 10
+        self.angle -= 5
         self.angle %= 360
 
     # Rotating
@@ -138,11 +138,11 @@ class Organism(pygame.sprite.Sprite):
 
     def move_forward(self):
         direction = pygame.Vector2(0, self.speed).rotate(-self.angle)
-        self.pos += direction
-        self.energy -= abs(self.speed) * 3
+        self.position += direction
+        self.energy -= abs(self.speed)
 
     def metabolism(self):
-        self.energy -= 10
+        self.energy -= 3
 
     def collided(self, food):
         if pygame.Rect.colliderect(self.rect, food):
@@ -154,25 +154,23 @@ class Organism(pygame.sprite.Sprite):
         self.player_input()
         self.rotate()
         self.metabolism()
-        self.time_alive += 1 / 30
+        self.time_alive += 1 / 60
         self.draw()
         self.update_xy()
 
         # Stopping organism from going out of screen
-        if self.pos.x < 0:
-            self.pos.x = 0
-        elif self.pos.x > 800:
-            self.pos.x = 800
-        elif self.pos.y < 0:
-            self.pos.y = 0
-        elif self.pos.y > 630:
-            self.pos.y = 630
+        if self.position.x < 0:
+            self.position.x = 0
+        elif self.position.x > 800:
+            self.position.x = 800
+        elif self.position.y < 0:
+            self.position.y = 0
+        elif self.position.y > 630:
+            self.position.y = 630
+        #
+        # if self.energy > 1000:
+        #     self.energy = 1000
 
-        # if self.energy > 10000:
-        #     self.energy = 10000
-
-        # if self.angle > 180:
-        #     self.angle = -(360-self.angle)
 
 
 class Food(pygame.sprite.Sprite):
@@ -214,7 +212,7 @@ def main():
         food_coordinates.append((food_x_spawn, food_y_spawn))
 
     crabs = []
-    crabs.append(Organism(2))
+    crabs.append(Organism(1))
 
     while True:
         for event in pygame.event.get():
@@ -226,7 +224,7 @@ def main():
             screen.blit(title_background_surf, (0, 0))
             screen.blit(title_name_surf, title_name_rect)
             start_button_title.draw()
-            if start_button_title.check_click():
+            if start_button_title.been_clicked():
                 title_screen, main_screen = False, True
 
         elif main_screen and len(foods) > 0:
@@ -274,7 +272,7 @@ def main():
                 angle_rect = angle_surf.get_rect(midleft=(20, 90))
                 screen.blit(angle_surf, angle_rect)
 
-                crabcoords_surf = text_font.render("crab coords: (" + str(int(crab.pos.x)) + ", " + str(int(crab.pos.y)) + ")", False, (0, 0, 0))
+                crabcoords_surf = text_font.render("crab coords: (" + str(int(crab.position.x)) + ", " + str(int(crab.position.y)) + ")", False, (0, 0, 0))
                 crabcoords_rect = crabcoords_surf.get_rect(midleft=(20, 110))
                 screen.blit(crabcoords_surf, crabcoords_rect)
 
@@ -285,9 +283,9 @@ def main():
                 shortest_distance_coords_surf = text_font.render("coords of closest food " + str(smallest_distance_coords), False, (0, 0, 0))
                 shortest_distance_coords_rect = shortest_distance_coords_surf.get_rect(midleft=(20, 150))
                 screen.blit(shortest_distance_coords_surf, shortest_distance_coords_rect)
-                pygame.draw.line(screen, (0, 0, 0), (crab.pos.x, crab.pos.y), smallest_distance_coords, 2)
+                pygame.draw.line(screen, (0, 0, 0), (crab.position.x, crab.position.y), smallest_distance_coords, 2)
 
-                angle_to_turn_surf = text_font.render("angle to turn: " + str(calculate_angle_between_crab_and_food(direction_facing, (crab.pos.x, crab.pos.y), (smallest_distance_coords))), False, (0, 0, 0))
+                angle_to_turn_surf = text_font.render("angle to turn: " + str(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords))), False, (0, 0, 0))
                 angle_to_turn_rect = crabcoords_surf.get_rect(midleft=(20, 170))
                 screen.blit(angle_to_turn_surf, angle_to_turn_rect)
 
@@ -295,16 +293,16 @@ def main():
             screen.fill((255, 255, 255))
             screen.blit(win_surf, win_rect)
             play_again_button.draw()
-            if play_again_button.check_click():
+            if play_again_button.been_clicked():
                 break
             exit_button.draw()
-            if exit_button.check_click():
+            if exit_button.been_clicked():
                 pygame.quit()
                 exit()
 
 
         pygame.display.update()
-        clock.tick(30)
+        clock.tick(60)
 
 play_again = True
 while play_again:
