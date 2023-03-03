@@ -17,34 +17,34 @@ def calculate_angle_between_crab_and_food(crab_degrees, crab_pos, food_pos):
         else:
             angle = crab_degrees - abs(math.degrees(math.atan((y2 - y1) / (x2 - x1))))
         if angle > 0:
-            return angle
+            angle = angle
         if angle < 0:
-            return 360 + angle
+            angle += 360
 
-    if y2 <= y1 and x2 <= x1:
+    elif y2 <= y1 and x2 <= x1:
         if y2 == y1:
             angle = crab_degrees - math.degrees(math.atan((x2 - x1)))
         else:
             angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) - 90
-        if angle > 0:
-            return angle
-        elif angle < 0:
-            return 360 + angle
+        if angle < 0:
+            angle += 360
 
-    if y2 >= y1 and x2 <= x1:
+    elif y2 >= y1 and x2 <= x1:
         if y2 == y1:
             angle = crab_degrees - math.degrees(math.atan((x2 - x1)))
         else:
             angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1)))
-        return (angle + 90) % 360
+        angle = (angle + 90) % 360
 
-    if y2 >= y1 and x2 >= x1:
+    elif y2 >= y1 and x2 >= x1:
         if y2 == y1:
             angle = crab_degrees - math.degrees(math.atan(x2 - x1))
         else:
             angle = crab_degrees - math.degrees(math.atan((x2 - x1) / (y2 - y1))) + 90
-        return angle % 360
-
+        angle = angle % 360
+    if angle > 180:
+        angle -= 360
+    return angle
 
 
 def calculate_distance(crab_pos, food_pos):
@@ -99,9 +99,11 @@ class Text:
         screen.blit(self.surf, self.rect)
 
 
-start_button_title = Button("Start", 150, 50, (325, 400))
+start_button_title = Button("Start Generation", 300, 50, (250, 400))
 play_again_button = Button("Play again?", 150, 50, (325, 400))
 exit_button = Button("Exit", 150, 50, (325, 470))
+settings_button = Button("Settings", 150, 50, (325, 470))
+back_button = Button("Back", 150, 50, (20, 20))
 
 
 # Organism
@@ -131,7 +133,6 @@ class Organism(pygame.sprite.Sprite):
     def draw(self):
         screen.blit(self.image, self.rect)
 
-    # Player inputs
     def center_update(self):
         self.rect.center = round(self.position[0]), round(self.position[1])
 
@@ -184,6 +185,7 @@ class Organism(pygame.sprite.Sprite):
         if self.energy > 1500:
             self.energy = 1500
 
+
 class PlayerControlledOrganism(Organism):
     def __init__(self, Speed, Xpos, Ypos, Image):
         super().__init__(speed=Speed, x_position=Xpos, y_position=Ypos, image=Image)
@@ -233,10 +235,10 @@ class Food(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
         screen.blit(self.image, self.rect)
 
-
-# Game loop
+generation = 0
 def main(genomes, config):
-    # different screens and menus
+    global generation
+    generation += 1
     title_font = pygame.font.Font("Fonts/pixelatedfont.ttf", 45)
     title_name_surf = title_font.render("Project", False, (0, 0, 0))
     title_name_rect = title_name_surf.get_rect(center=(screen_width / 2, 200))
@@ -245,6 +247,8 @@ def main(genomes, config):
     text_font = pygame.font.Font("Fonts/Pixeltype.ttf", 30)
     main_background_surf = pygame.image.load("Backgrounds/mainbackground.png").convert()
     main_screen = False
+    settings_background_surf = pygame.image.load("Backgrounds/settingsbackground.png").convert()
+    settings_screen = False
 
     nets = []
     ge = []
@@ -278,24 +282,32 @@ def main(genomes, config):
             screen.blit(title_background_surf, (0, 0))
             screen.blit(title_name_surf, title_name_rect)
             start_button_title.draw()
+            settings_button.draw()
             if start_button_title.been_clicked():
                 title_screen, main_screen = False, True
+            if settings_button.been_clicked():
+                settings_screen, title_screen = True, False
 
-        elif main_screen and len(foods) > 0:
+        if settings_screen:
+            screen.blit(settings_background_surf, (0, 0))
+            back_button.draw()
+            if back_button.been_clicked():
+                title_screen, settings_screen = True, False
+
+        elif main_screen and not settings_screen and len(foods) > 0:
 
             if len(crabs) <= 0:
                 break
             for x, crab in enumerate(crabs):
-                # crab.move_forward()
                 ge[x].fitness += 0.1
+                crab.move_forward()
 
-                output = nets[x].activate((crab.position.x, crab.angle_to_turn, crab.smallest_distance))
-                if output[0] < 1/5:
-                    crab.move_forward()
-                elif 1/5 <output[0] < 3/5:
-                    crab.turn_left()
-                elif output[0] > 3/5:
+                output = nets[x].activate((crab.energy, crab.angle_to_turn, crab.smallest_distance))
+
+                if 1/2 < output[0]:
                     crab.turn_right()
+                else:
+                    crab.turn_left()
 
             while len(foods) != 50:
                 food_x_spawn = randint(10, 790)
@@ -313,8 +325,6 @@ def main(genomes, config):
                         list_of_food_coords.append(food_coord)
                     food.draw()
                     if crab.collided(food):
-                        for g in ge:
-                            g.fitness += 4
                         foods.remove(food)
                         food_coordinates.remove(food.xy)
                         list_of_food_coords.remove(food.xy)
@@ -331,7 +341,6 @@ def main(genomes, config):
                     nets.pop(x)
                     ge.pop(x)
 
-                time_alive = crab.time_alive
                 direction_facing = (crab.angle + 90) % 360
                 crab.angle_to_turn = int(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords)))
                 pygame.draw.line(screen, (0, 0, 0), (crab.position.x, crab.position.y), smallest_distance_coords, 2)
@@ -363,28 +372,29 @@ def main(genomes, config):
                 crab.angle_to_turn = int(calculate_angle_between_crab_and_food(direction_facing, (crab.position.x, crab.position.y), (smallest_distance_coords)))
                 pygame.draw.line(screen, (0, 0, 0), (crab.position.x, crab.position.y), smallest_distance_coords, 2)
 
-                object1 = Text("Energy: " + str(int(amount_of_energy)), text_font, (20, 50))
-                object1.draw()
+                energy_display = Text("Energy: " + str(int(amount_of_energy)), text_font, (20, 50))
+                energy_display.draw()
 
-                object2 = Text("Time Alive: " + str(int(time_alive)), text_font, (20, 70))
-                object2.draw()
+                time_alive_display = Text("Time Alive: " + str(int(time_alive)), text_font, (20, 70))
+                time_alive_display.draw()
 
-                object3 = Text("Angle: " + str(crab.angle), text_font, (20, 90))
-                object3.draw()
+                angle = Text("Angle: " + str(crab.angle), text_font, (20, 90))
+                angle.draw()
 
-                object4 = Text("Crab Coordinates: (" + str(int(crab.position.x)) + ", " + str(int(crab.position.y)) + ")", text_font, (20, 110))
-                object4.draw()
+                crab_coordinates_display = Text("Crab Coordinates: (" + str(int(crab.position.x)) + ", " + str(int(crab.position.y)) + ")", text_font, (20, 110))
+                crab_coordinates_display.draw()
 
-                object5 = Text("Shortest Distance: " + str(crab.smallest_distance), text_font, (20, 130))
-                object5.draw()
+                shortest_distance_display = Text("Shortest Distance: " + str(crab.smallest_distance), text_font, (20, 130))
+                shortest_distance_display.draw()
 
-                object6 = Text("Coordinates of closest food: " + str(smallest_distance_coords), text_font, (20, 150))
-                object6.draw()
+                coordinates_food_display = Text("Coordinates of closest food: " + str(smallest_distance_coords), text_font, (20, 150))
+                coordinates_food_display.draw()
 
-                object7 = Text("Angle to turn: " + str(crab.angle_to_turn), text_font, (20, 170))
-                object7.draw()
+                angle_turn_display = Text("Angle to turn: " + str(crab.angle_to_turn), text_font, (20, 170))
+                angle_turn_display.draw()
 
-
+            generation_display = Text("Generation: " + str(generation), text_font, (20, 30))
+            generation_display.draw()
         pygame.display.update()
         clock.tick(60)
 
@@ -396,7 +406,7 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    p.run(main, 50)
+    p.run(main, 100)
 
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
