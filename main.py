@@ -406,9 +406,30 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    p.run(main, 100)
+    p.run(main, 10)
 
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, "config-feedforward.txt")
     run(config_path)
+
+# def move_forward(self):
+#     direction = pygame.Vector2(0, self.speed).rotate(-self.angle)
+#     self.position += direction
+#     self.energy -= self.speed
+#
+# def turn_left(self):
+#     self.angle += 5
+#     self.angle %= 360
+#
+# def turn_right(self):
+#     self.angle -= 5
+#     self.angle %= 360
+#
+# def rotate(self):
+#     self.direction = pygame.Vector2(1, 0).rotate(-self.angle)
+#     self.image = pygame.transform.rotate(self.original_image, self.angle)
+#     self.rect = self.image.get_rect(center=self.rect.center)
+
+# self.direction = pygame.Vector2(1, 0)
+# self.position = pygame.Vector2(self.rect.center)
